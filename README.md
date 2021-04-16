@@ -13,21 +13,23 @@
 
 ## Sample images and Results
 
-> Correctely printed label
+> printed label
 <img src="./data/images/results/r1.png">
 
-> Mis-printed Label
+> Blurred image
 <img src="./data/images/results/r2.png">
 
-> Mis-printed Label
+> Empty Label
 <img src="./data/images/results/r3.png">
 
-> Mis-printed Label
+> Not detected Label
 <img src="./data/images/results/r4.png">
 
-> Mis-printed Label
+> False Negative Label
 <img src="./data/images/results/r5.png">
 
+#### For production false positive is morre important than false negative 
+- This models shows the very low false positive rate
 
 ## Model : 2 step:
 - 1) Object detection 
