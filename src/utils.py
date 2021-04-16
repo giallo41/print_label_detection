@@ -34,6 +34,7 @@ def cv_img_result(img, pred, detections, pixels=30):
             rgb = (255,0,0) # Blue 
         else:
             rgb = (0,0,255) # Red
+            prob = 1 - prob
         txt = f'{txt} : {prob:.2f}'
 
         cv2.rectangle(img, (xmin, ymin), (xmax, ymax),
@@ -66,6 +67,7 @@ def show_result_img(img, pred, detections, pixels=30):
             rgb = (0,0,255)
         else:
             rgb = (255,0,0)
+            prob = 1 - prob
         txt = f'{txt} : {prob:.2f}'
 
         cv2.rectangle(img, (xmin, ymin), (xmax, ymax),

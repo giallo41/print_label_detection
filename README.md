@@ -14,10 +14,19 @@
 ## Sample images and Results
 
 > Correctely printed label
-<img src="./data/images/results/out01.png">
+<img src="./data/images/results/r1.png">
 
 > Mis-printed Label
-<img src="./data/images/results/out02.png">
+<img src="./data/images/results/r2.png">
+
+> Mis-printed Label
+<img src="./data/images/results/r3.png">
+
+> Mis-printed Label
+<img src="./data/images/results/r4.png">
+
+> Mis-printed Label
+<img src="./data/images/results/r5.png">
 
 
 ## Model : 2 step:
