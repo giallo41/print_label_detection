@@ -28,8 +28,16 @@
 > False Negative Label
 <img src="./data/images/results/r5.png">
 
+
 #### For production false positive is morre important than false negative 
 - This models shows the very low false positive rate
+
+## For training 
+- There are few negative(False) example avaialble 
+- To make up this I genrated Synthetic False exmaples 
+
+> Generated False Example 
+<img src="./data/images/results/f__100.jpeg">
 
 ## Model : 2 step:
 - 1) Object detection 
