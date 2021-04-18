@@ -14,7 +14,7 @@ from PIL import Image, ImageDraw, ImageFont
 import sys
 sys.path.append('/home/jupyter/git/models/research')
 
-def cv_img_result(img, pred, detections, pixels=30):
+def cv_img_result(img, pred, detections, pixels=30, img_show=False):
 
     # return processed image and class list 
     result_class = [ 'true' if i>0.5  else 'false' for i in np.reshape(pred, (len(pred))) ]
@@ -44,42 +44,11 @@ def cv_img_result(img, pred, detections, pixels=30):
         cv2.putText(img, txt, (xmin, text_y),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, rgb, 2)
         
+        if img_show:
+            plt.figure(figsize=(6, 4), dpi=80)
+            plt.imshow(img)
+
     return img, result_class
-
-
-def show_result_img(img, pred, detections, pixels=30):
-    # Plot processed figures and result class 
-    plt.figure(figsize=(12, 10), dpi=80)
-    result_class = [ 'true' if i>0.5  else 'false' for i in np.reshape(pred, (len(pred))) ]
-    prob_list = [i for i in np.reshape(pred, (len(pred)))]
-    
-    image_h, image_w, _ = img.shape
-    
-    for txt, prob, bbox in zip(result_class, prob_list, detections):
-        
-        xmin, ymin, xmax, ymax = bbox['box_points']
-        xmin = max(0, xmin)
-        ymin = max(0, ymin)
-        xmax = min(image_w, xmax)
-        ymax = min(image_h, ymax)
-        
-        if txt == 'true':
-            rgb = (0,0,255)
-        else:
-            rgb = (255,0,0)
-            prob = 1 - prob
-        txt = f'{txt} : {prob:.2f}'
-
-        cv2.rectangle(img, (xmin, ymin), (xmax, ymax),
-                      rgb, 4)
-        
-        text_y = ymin - 15 if ymin - 15 > 15 else ymin + 15
-        cv2.putText(img, txt, (xmin, text_y),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, rgb, 2)
-	# show the output image
-    #cv2.imshow("Output", img)
-    plt.imshow(img)
-    return result_class
     
 
 def load_image_into_numpy_array(path):
