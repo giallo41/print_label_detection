@@ -10,12 +10,10 @@ from src.utils import cv_img_result
 
 from imageai.Detection.Custom import CustomObjectDetection
 
-detector = CustomObjectDetection()
-detector.setModelTypeAsYOLOv3()
-
 D_MODEL_PATH = f"./data/images/box/models/detection_model-ex-030--loss-0010.144.h5"
 JSON_FILE_PATH = f"./data/images/box/json/detection_config.json"
 C_MODEL_PATH = f"./data/models/mobilnet/mobilenet.h5"
+FRAME_RATE = 10
 
 def model_load(detection_model_path,
                json_path,
@@ -58,24 +56,33 @@ def main():
 
     cap = cv2.VideoCapture(0)
 
+    
+    prev = 0
+
     while(True):
 
+        time_elapsed = time.time() - prev
         ret, frame = cap.read()
 
         detections = []
-        # Detect the object 
-        _, detections = detector.detectObjectsFromImage(input_image=frame,
-                                                        input_type='array',
-                                                        output_type='array')
+        pred = None
+        result_class = None
 
-        if len(detections)>0:
-            roi_list = extract_roi(frame, detections)
-            # Classify the object
-            pred = model.predict(np.array(roi_list))
+        if time_elapsed > 1./FRAME_RATE:
+            prev = time.time()
+            # Detect the object 
+            _, detections = detector.detectObjectsFromImage(input_image=frame,
+                                                            input_type='array',
+                                                            output_type='array')
 
-            frame, result_class = cv_img_result(frame, pred, detections)
+            if len(detections)>0:
+                roi_list = extract_roi(frame, detections)
+                # Classify the object
+                pred = model.predict(np.array(roi_list))
 
-        # show the output image
+                frame, result_class = cv_img_result(frame, pred, detections)
+
+            # show the output image
         cv2.imshow("Output", frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
