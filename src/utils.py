@@ -1,8 +1,11 @@
 import cv2
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 
 import numpy as np
 import tensorflow as tf
+
+from tensorflow.keras.preprocessing import image
 
 from six import BytesIO
 from PIL import Image, ImageDraw, ImageFont
@@ -13,6 +16,72 @@ from PIL import Image, ImageDraw, ImageFont
 
 import sys
 sys.path.append('/home/jupyter/git/models/research')
+
+def make_gradcam_heatmap(img_array, model, last_conv_layer_name, pred_index=None):
+    # First, we create a model that maps the input image to the activations
+    # of the last conv layer as well as the output predictions
+    grad_model = tf.keras.models.Model(
+        [model.inputs], [model.get_layer(last_conv_layer_name).output, model.output]
+    )
+
+    # Then, we compute the gradient of the top predicted class for our input image
+    # with respect to the activations of the last conv layer
+    with tf.GradientTape() as tape:
+        last_conv_layer_output, preds = grad_model(img_array)
+        if pred_index is None:
+            pred_index = tf.argmax(preds[0])
+        class_channel = preds[:, pred_index]
+
+    # This is the gradient of the output neuron (top predicted or chosen)
+    # with regard to the output feature map of the last conv layer
+    grads = tape.gradient(class_channel, last_conv_layer_output)
+
+    # This is a vector where each entry is the mean intensity of the gradient
+    # over a specific feature map channel
+    pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
+
+    # We multiply each channel in the feature map array
+    # by "how important this channel is" with regard to the top predicted class
+    # then sum all the channels to obtain the heatmap class activation
+    last_conv_layer_output = last_conv_layer_output[0]
+    heatmap = last_conv_layer_output @ pooled_grads[..., tf.newaxis]
+    heatmap = tf.squeeze(heatmap)
+
+    # For visualization purpose, we will also normalize the heatmap between 0 & 1
+    heatmap = tf.maximum(heatmap, 0) / tf.math.reduce_max(heatmap)
+    return heatmap.numpy()
+
+def image_impose(img, heatmap, alpha=0.003):
+    # Rescale heatmap to a range 0-255
+    heatmap = np.uint8(255 * heatmap)
+
+    # Use jet colormap to colorize heatmap
+    jet = cm.get_cmap("jet")
+
+    # Use RGB values of the colormap
+    jet_colors = jet(np.arange(256))[:, :3]
+    jet_heatmap = jet_colors[heatmap]
+
+    # Create an image with RGB colorized heatmap
+    jet_heatmap = image.array_to_img(jet_heatmap)
+    jet_heatmap = jet_heatmap.resize((img.shape[1], img.shape[0]))
+    jet_heatmap = image.img_to_array(jet_heatmap)
+
+    # Superimpose the heatmap on original image
+    print(jet_heatmap.shape)
+    superimposed_img = jet_heatmap * alpha + img
+    superimposed_img = image.array_to_img(superimposed_img)
+    
+    return superimposed_img
+
+def disply_heatmap(img, model, last_conv_layer_name):
+    if len(img.shape)<4:
+        input_img = np.expand_dims(img, 0)
+        
+    heatmap = make_gradcam_heatmap(input_img, model, last_conv_layer_name)
+    
+    output_img = image_impose(img, heatmap)
+    return output_img
 
 def cv_img_result(img, pred, detections, pixels=30):
 
@@ -34,7 +103,7 @@ def cv_img_result(img, pred, detections, pixels=30):
             rgb = (255,0,0) # Blue 
         else:
             rgb = (0,0,255) # Red
-            prob = 1 - prob
+            prob = 1-prob
         txt = f'{txt} : {prob:.2f}'
 
         cv2.rectangle(img, (xmin, ymin), (xmax, ymax),
@@ -47,9 +116,9 @@ def cv_img_result(img, pred, detections, pixels=30):
     return img, result_class
 
 
-def show_result_img(img, pred, detections, pixels=30):
+def show_result_img(img, pred, detections, pixels=30, img_show=True):
     # Plot processed figures and result class 
-    plt.figure(figsize=(12, 10), dpi=80)
+    
     result_class = [ 'true' if i>0.5  else 'false' for i in np.reshape(pred, (len(pred))) ]
     prob_list = [i for i in np.reshape(pred, (len(pred)))]
     
@@ -67,7 +136,7 @@ def show_result_img(img, pred, detections, pixels=30):
             rgb = (0,0,255)
         else:
             rgb = (255,0,0)
-            prob = 1 - prob
+            prob = 1-prob
         txt = f'{txt} : {prob:.2f}'
 
         cv2.rectangle(img, (xmin, ymin), (xmax, ymax),
@@ -78,8 +147,10 @@ def show_result_img(img, pred, detections, pixels=30):
                     cv2.FONT_HERSHEY_SIMPLEX, 1, rgb, 2)
 	# show the output image
     #cv2.imshow("Output", img)
-    plt.imshow(img)
-    return result_class
+    if img_show:
+        plt.figure(figsize=(6, 4), dpi=80)
+        plt.imshow(img)
+    return img, result_class
     
 
 def load_image_into_numpy_array(path):
