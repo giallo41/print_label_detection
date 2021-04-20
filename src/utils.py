@@ -68,7 +68,6 @@ def image_impose(img, heatmap, alpha=0.003):
     jet_heatmap = image.img_to_array(jet_heatmap)
 
     # Superimpose the heatmap on original image
-    print(jet_heatmap.shape)
     superimposed_img = jet_heatmap * alpha + img
     superimposed_img = image.array_to_img(superimposed_img)
     
@@ -77,6 +76,8 @@ def image_impose(img, heatmap, alpha=0.003):
 def disply_heatmap(img, model, last_conv_layer_name):
     if len(img.shape)<4:
         input_img = np.expand_dims(img, 0)
+    else :
+        input_img = img
         
     heatmap = make_gradcam_heatmap(input_img, model, last_conv_layer_name)
     
